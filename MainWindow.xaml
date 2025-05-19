@@ -140,6 +140,7 @@
             <Button x:Name="btnExportExcel" Content="Export to Excel" Width="160" Click="BtnExportExcel_Click"/>
             <Button x:Name="btnExportXml" Content="Export to XML" Width="160" Click="BtnExportXml_Click"/>
             <Button x:Name="btnCancel" Content="Cancel Import" Width="160" Click="BtnCancel_Click"/>
+            <Button x:Name="btnExit" Content="Exit" Width="160" Click="BtnExit_Click"/>
         </StackPanel>
         <GroupBox Grid.Row="4" Header="Logs">
             <TextBox x:Name="txtLog" Margin="5" IsReadOnly="True" 

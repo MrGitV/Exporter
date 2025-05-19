@@ -258,5 +258,11 @@ namespace Exporter
         {
             MessageBox.Show(message, "Error", MessageBoxButton.OK, MessageBoxImage.Error);
         }
+
+        // Event handler for the Exit button click event
+        private void BtnExit_Click(object sender, RoutedEventArgs e)
+        {
+            Application.Current.Shutdown();
+        }
     }
 }
