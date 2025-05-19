@@ -3,6 +3,7 @@ using System;
 using System.ComponentModel;
 using System.Data.SqlClient;
 using System.IO;
+using System.Threading;
 using System.Windows;
 
 namespace Exporter
@@ -12,6 +13,7 @@ namespace Exporter
     {
         private DatabaseService dbService;
         private BackgroundWorker importWorker;
+        private CancellationTokenSource cts;
 
         public MainWindow()
         {
@@ -119,6 +121,9 @@ namespace Exporter
                 var parser = new CsvParserService();
                 var records = parser.ParseFile(filePath);
 
+                int startId = dbService.GetCurrentMaxId();
+                e.Result = startId;
+
                 dbService.ImportData(records, importWorker);
             }
             catch (Exception ex)
@@ -138,13 +143,31 @@ namespace Exporter
         // Method to execute when background worker process completes
         private void ImportWorker_RunWorkerCompleted(object sender, RunWorkerCompletedEventArgs e)
         {
-            if (e.Error != null)
+            btnCancel.IsEnabled = true;
+
+            if (e.Cancelled)
+            {
+                int startId = (int)e.Result;
+                dbService.DeleteRecordsAfterId(startId);
+                LogMessage("Import cancelled. All changes rolled back.");
+            }
+            else if (e.Error != null)
             {
                 ShowError($"Import failed: {e.Error.Message}");
             }
             else
             {
                 LogMessage("Import completed successfully!");
+            }
+        }
+
+        // Event handler for the Cancel button click event
+        private void BtnCancel_Click(object sender, RoutedEventArgs e)
+        {
+            if (importWorker.IsBusy)
+            {
+                importWorker.CancelAsync();
+                btnCancel.IsEnabled = false;
             }
         }
 

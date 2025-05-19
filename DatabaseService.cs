@@ -61,6 +61,25 @@ namespace Exporter
             }
         }
 
+        // Method to retrieve the current maximum ID from the Records table
+        public int GetCurrentMaxId()
+        {
+            using (var context = new AppDbContext(connectionString))
+            {
+                return context.Records.Max(r => (int?)r.Id) ?? 0;
+            }
+        }
+
+        // Method to delete records from the Records table that have an ID greater than the specified startId
+        public void DeleteRecordsAfterId(int startId)
+        {
+            using (var context = new AppDbContext(connectionString))
+            {
+                context.Database.ExecuteSqlCommand("DELETE FROM Records WHERE Id > @p0", startId);
+                context.SaveChanges();
+            }
+        }
+
         // Method for splitting records into batches
         private IEnumerable<IEnumerable<DataRecord>> BatchRecords(IEnumerable<DataRecord> records, int batchSize)
         {
