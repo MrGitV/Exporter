@@ -2,61 +2,44 @@
 using System.Collections.Generic;
 using System.Globalization;
 using System.IO;
-using System.Text;
+using System.Linq;
 
 namespace Exporter
 {
-    // Handles CSV file parsing and validation
     public class CsvParserService
     {
-        // Parses CSV file with data validation
-        public IEnumerable<DataRecord> ParseFile(string filePath)
+        // Parses CSV file asynchronously and returns records as an async stream
+        public async IAsyncEnumerable<DataRecord> ParseFileAsync(string filePath)
         {
-            var culture = CultureInfo.InvariantCulture;
-            var dateStyles = DateTimeStyles.AllowWhiteSpaces | DateTimeStyles.AssumeLocal;
+            using var reader = new StreamReader(filePath);
+            int lineNumber = 0;
 
-            using (var reader = new StreamReader(filePath, Encoding.UTF8, detectEncodingFromByteOrderMarks: true))
+            while (!reader.EndOfStream)
             {
-                string line;
-                int lineNumber = 0;
+                lineNumber++;
+                var line = await reader.ReadLineAsync();
+                if (string.IsNullOrWhiteSpace(line)) continue;
 
-                while ((line = reader.ReadLine()) != null)
+                var parts = line.Split(';');
+                if (parts.Length != 6)
+                    throw new FormatException($"Invalid CSV format at line {lineNumber}");
+
+                if (!DateTime.TryParseExact(parts[0].Trim(), new[] { "dd.MM.yyyy", "d.M.yyyy" },
+                    CultureInfo.CreateSpecificCulture("ru-RU"), DateTimeStyles.None, out var date))
                 {
-                    lineNumber++;
-
-                    // Validate line format
-                    if (string.IsNullOrWhiteSpace(line)) continue;
-
-                    var parts = line.Split(';');
-                    if (parts.Length != 6)
-                        throw new FormatException($"Invalid CSV format at line {lineNumber}");
-
-                    // Parse and validate date
-                    if (!DateTime.TryParseExact(
-                        parts[0].Trim(),
-                        new[] { "dd.MM.yyyy", "yyyy-MM-dd" },
-                        culture,
-                        dateStyles,
-                        out DateTime date))
-                    {
-                        throw new FormatException($"Invalid date format at line {lineNumber}: {parts[0]}");
-                    }
-
-                    yield return new DataRecord
-                    {
-                        Date = date.Date,
-                        FirstName = Sanitize(parts[1]),
-                        LastName = Sanitize(parts[2]),
-                        SurName = Sanitize(parts[3]),
-                        City = Sanitize(parts[4]),
-                        Country = Sanitize(parts[5])
-                    };
+                    throw new FormatException($"Invalid date format at line {lineNumber}: {parts[0]}");
                 }
+
+                yield return new DataRecord
+                {
+                    Date = date,
+                    FirstName = parts[1].Trim(),
+                    LastName = parts[2].Trim(),
+                    SurName = parts[3].Trim(),
+                    City = parts[4].Trim(),
+                    Country = parts[5].Trim()
+                };
             }
         }
-
-        // Sanitizes input and enforces length limits
-        private string Sanitize(string input) =>
-            string.IsNullOrWhiteSpace(input) ? string.Empty : input.Trim();
     }
 }

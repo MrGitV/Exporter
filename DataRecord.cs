@@ -1,10 +1,14 @@
 ﻿using System;
+using System.ComponentModel.DataAnnotations.Schema;
+using System.ComponentModel.DataAnnotations;
 
 namespace Exporter
 {
     // Class representing a data record
     public class DataRecord
     {
+        [Key]
+        [DatabaseGenerated(DatabaseGeneratedOption.Identity)]
         public int Id { get; set; }
         public DateTime Date { get; set; }
         public string FirstName { get; set; }
